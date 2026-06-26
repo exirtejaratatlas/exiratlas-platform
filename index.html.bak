@@ -1,0 +1,30 @@
+<?php
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/layout.php';
+require_login();
+$u = current_user();
+
+if (is_admin()) {
+  $cust = db()->query('SELECT COUNT(*) FROM customers')->fetchColumn();
+  $sup  = db()->query('SELECT COUNT(*) FROM suppliers')->fetchColumn();
+  $mfr  = db()->query('SELECT COUNT(*) FROM manufacturers')->fetchColumn();
+  $rfqOpen = db()->query("SELECT COUNT(*) FROM rfqs WHERE status NOT IN ('Won','Lost','Cancelled')")->fetchColumn();
+} else {
+  $cust = q('SELECT COUNT(*) FROM customers WHERE owner_user_id = ?', [$u['id']])->fetchColumn();
+  $sup = $mfr = '—';
+  $rfqOpen = q("SELECT COUNT(*) FROM rfqs WHERE owner_user_id = ? AND status NOT IN ('Won','Lost','Cancelled')", [$u['id']])->fetchColumn();
+}
+
+render_header('داشبورد');
+echo "<div class='toolbar'><div><h1>داشبورد عملیاتی</h1><div class='muted' style='font-size:13px'>نمای کلی فعالیت‌های ETA</div></div></div>";
+
+echo "<div class='stats'>";
+echo "<div class='stat'><div class='n'>".e($cust)."</div><div class='l'>مشتریان</div></div>";
+echo "<div class='stat s-orange'><div class='n'>".e($rfqOpen)."</div><div class='l'>استعلام‌های باز</div></div>";
+echo "<div class='stat s-ok'><div class='n'>".e($sup)."</div><div class='l'>ساپلایرها</div></div>";
+echo "<div class='stat s-info'><div class='n'>".e($mfr)."</div><div class='l'>تولیدکننده‌ها</div></div>";
+echo "</div>";
+
+echo "<div class='panel'>";
+echo "<h2>خوش آمدید، ".e($u['name'])."</h2>";
+echo "<p class='muted'>این پورتال عملیاتی ETA است (لایه‌ی Operations سیستم‌عامل شرکت). از منوی کناری، مشتریان و استعلام‌ها را مدیریت کنید. ماژول‌های ساپلایر، تولیدکننده و RFQ کامل و اتصال به اتوماسیون تل

@@ -1,0 +1,25 @@
+<?php
+require_once __DIR__ . '/db.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+function current_user() { return $_SESSION['user'] ?? null; }
+function is_admin() { $u = current_user(); return $u && $u['role'] === 'admin'; }
+
+function require_login() {
+  if (!current_user()) { header('Location: login.php'); exit; }
+}
+function require_admin() {
+  require_login();
+  if (!is_admin()) { http_response_code(403); echo 'دسترسی غیرمجاز است.'; exit; }
+}
+
+function login($email, $password) {
+  $u = q('SELECT * FROM users WHERE email = ? AND active = 1', [trim($email)])->fetch();
+  if ($u && password_verify($password, $u['password_hash'])) {
+    unset($u['password_hash']);
+    $_SESSION['user'] = $u;
+    return true;
+  }
+  return false;
+}
+function logout() { $_SESSION = []; session_destroy(); }
